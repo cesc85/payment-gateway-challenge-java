@@ -35,7 +35,7 @@ public class CommonExceptionHandler {
         .map(CommonExceptionHandler::merchantMessage)
         .sorted()
         .collect(Collectors.joining("; "));
-    LOG.debug("Payment rejected: {}", message);
+    LOG.info("Payment rejected: {}", message);
     return new ResponseEntity<>(new ErrorResponse(PaymentStatus.REJECTED, message),
         HttpStatus.BAD_REQUEST);
   }
@@ -63,7 +63,7 @@ public class CommonExceptionHandler {
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
-    LOG.debug("Payment rejected: unreadable request body");
+    LOG.info("Payment rejected: unreadable request body");
     return new ResponseEntity<>(
         new ErrorResponse(PaymentStatus.REJECTED, "Request body is missing or malformed"),
         HttpStatus.BAD_REQUEST);

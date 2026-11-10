@@ -43,7 +43,7 @@ public class PaymentGatewayService {
     payment.setCurrency(request.getCurrency());
     payment.setAmount(request.getAmount());
     paymentsRepository.add(payment);
-    LOG.debug("Payment {} processed with status {}", payment.getId(), payment.getStatus());
+    LOG.info("Payment {} processed with status {}", payment.getId(), payment.getStatus());
     return payment;
   }
 }
