@@ -1,10 +1,14 @@
 package com.checkout.payment.gateway.exception;
 
+import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.ErrorResponse;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -18,5 +22,32 @@ public class CommonExceptionHandler {
     LOG.error("Exception happened", ex);
     return new ResponseEntity<>(new ErrorResponse("Page not found"),
         HttpStatus.NOT_FOUND);
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+    // Field names only: never echo rejected values back, they may be card data.
+    String message = ex.getBindingResult().getFieldErrors().stream()
+        .map(e -> e.getField() + " " + e.getDefaultMessage())
+        .sorted()
+        .collect(Collectors.joining("; "));
+    LOG.debug("Payment rejected: {}", message);
+    return new ResponseEntity<>(new ErrorResponse(PaymentStatus.REJECTED, message),
+        HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
+    LOG.debug("Payment rejected: unreadable request body");
+    return new ResponseEntity<>(
+        new ErrorResponse(PaymentStatus.REJECTED, "Request body is missing or malformed"),
+        HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(BankUnavailableException.class)
+  public ResponseEntity<ErrorResponse> handleBankUnavailable(BankUnavailableException ex) {
+    LOG.error("Acquiring bank call failed", ex);
+    return new ResponseEntity<>(new ErrorResponse("Acquiring bank unavailable"),
+        HttpStatus.SERVICE_UNAVAILABLE);
   }
 }

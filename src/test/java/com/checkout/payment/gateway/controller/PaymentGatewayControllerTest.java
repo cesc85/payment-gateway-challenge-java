@@ -9,6 +9,8 @@ import com.checkout.payment.gateway.model.PostPaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,8 +27,9 @@ class PaymentGatewayControllerTest {
   @Autowired
   PaymentsRepository paymentsRepository;
 
-  @Test
-  void whenPaymentWithIdExistThenCorrectPaymentIsReturned() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"4321", "0321"})
+  void whenPaymentWithIdExistThenCorrectPaymentIsReturned(String lastFour) throws Exception {
     PostPaymentResponse payment = new PostPaymentResponse();
     payment.setId(UUID.randomUUID());
     payment.setAmount(10);
@@ -34,7 +37,7 @@ class PaymentGatewayControllerTest {
     payment.setStatus(PaymentStatus.AUTHORIZED);
     payment.setExpiryMonth(12);
     payment.setExpiryYear(2024);
-    payment.setCardNumberLastFour(4321);
+    payment.setCardNumberLastFour(lastFour);
 
     paymentsRepository.add(payment);
 
