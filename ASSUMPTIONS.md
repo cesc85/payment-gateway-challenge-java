@@ -24,7 +24,7 @@
 - They run through `MockMvc`, and the bank is mocked with `MockRestServiceServer` on the app's `RestTemplate`.
 - They check the exact request sent to the bank, every validation rule (including boundaries), malformed bodies and each bank failure mode.
 - They also check that rejected payments never reach the bank and that card data is not leaked.
-- The real Mountebank simulator was **not** run (Docker was skipped by request), so the bank contract is only verified against the README's description.
+- Automated tests mock the bank. `docker compose up` runs the gateway against the real Mountebank simulator.
 
 ## Running
 Needs JDK 17 (Gradle 8.2.1 does not run on JDK 25): `JAVA_HOME=<jdk17> ./gradlew test`
