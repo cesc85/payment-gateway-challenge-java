@@ -86,7 +86,7 @@ public class PostPaymentRequest implements Serializable {
 
   // Skipped when month/year are missing or invalid: those fields report their own errors.
   @JsonIgnore
-  @AssertTrue(message = "expiry month and year must be in the future")
+  @AssertTrue(message = "expiry_month and expiry_year must be in the future")
   public boolean isExpiryInFuture() {
     if (expiryMonth == null || expiryYear == null || expiryMonth < 1 || expiryMonth > 12) {
       return true;

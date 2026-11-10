@@ -23,8 +23,8 @@ public class BankClient {
     try {
       BankPaymentResponse response =
           restTemplate.postForObject(bankUrl, request, BankPaymentResponse.class);
-      if (response == null) {
-        throw new BankUnavailableException("Empty response from acquiring bank");
+      if (response == null || response.authorized() == null) {
+        throw new BankUnavailableException("Acquiring bank response did not include authorized");
       }
       return response;
     } catch (RestClientException e) {

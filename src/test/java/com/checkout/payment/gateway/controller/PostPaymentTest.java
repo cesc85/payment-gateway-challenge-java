@@ -199,7 +199,8 @@ class PostPaymentTest {
         })))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value("Rejected"))
-        .andExpect(jsonPath("$.message").value(containsString("in the future")));
+        .andExpect(jsonPath("$.message")
+            .value("expiry_month and expiry_year must be in the future"));
     bank.verify();
   }
 
@@ -232,12 +233,14 @@ class PostPaymentTest {
     mvc.perform(post("{}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value("Rejected"))
-        .andExpect(jsonPath("$.message").value(containsString("cardNumber")))
-        .andExpect(jsonPath("$.message").value(containsString("expiryMonth")))
-        .andExpect(jsonPath("$.message").value(containsString("expiryYear")))
+        .andExpect(jsonPath("$.message").value(containsString("card_number")))
+        .andExpect(jsonPath("$.message").value(containsString("expiry_month")))
+        .andExpect(jsonPath("$.message").value(containsString("expiry_year")))
         .andExpect(jsonPath("$.message").value(containsString("currency")))
         .andExpect(jsonPath("$.message").value(containsString("amount")))
-        .andExpect(jsonPath("$.message").value(containsString("cvv")));
+        .andExpect(jsonPath("$.message").value(containsString("cvv")))
+        .andExpect(jsonPath("$.message").value(not(containsString("cardNumber"))))
+        .andExpect(jsonPath("$.message").value(not(containsString("expiryInFuture"))));
   }
 
   @Test
@@ -304,6 +307,17 @@ class PostPaymentTest {
 
     mvc.perform(post(validRequest(m -> { })))
         .andExpect(status().isServiceUnavailable());
+  }
+
+  @Test
+  void bankResponseWithoutAuthorizedResultsIn503() throws Exception {
+    bank.expect(once(), requestTo(BANK_URL)).andRespond(withSuccess(
+        "{\"authorization_code\":\"abc\"}", MediaType.APPLICATION_JSON));
+
+    mvc.perform(post(validRequest(m -> { })))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("Acquiring bank unavailable"));
+    bank.verify();
   }
 
   @Test

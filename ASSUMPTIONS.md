@@ -10,21 +10,21 @@
 3. **Expiry "in the future".** Read literally. `expiry month/year` must be strictly after the current month, so a card expiring this month is rejected. Real cards are usually valid to the end of the month; if that is wanted, change `isAfter` to `!isBefore` in `PostPaymentRequest`.
 4. **Currencies.** Only `USD`, `GBP` and `EUR` are accepted (the spec allows at most 3). Matching is case-sensitive, so `gbp` is rejected.
 5. **Amount.** Must be an integer greater than 0. `10.5` is rejected (Jackson's `accept-float-as-int` is turned off) rather than truncated. Values beyond `int` range are rejected too.
-6. **Rejected payments** return `400` with `{"status":"Rejected","message":"..."}`. The message lists field names and rules, never the submitted values, so card data is not echoed. Rejected payments are not stored and the bank is not called.
+6. **Rejected payments** return `400` with `{"status":"Rejected","message":"..."}`. The message uses the request's JSON names and the rule, never the submitted values, so card data is not echoed. Examples: `card_number must be 14-19 numeric characters`, and `expiry_month and expiry_year must be in the future`. Rejected payments are not stored and the bank is not called.
 7. **Authorized and Declined** return `200` with the payment in the body, and the payment is stored for later retrieval.
-8. **Bank failures** (503, 4xx, timeout, connection error, empty body) return `503 {"message":"Acquiring bank unavailable"}`. The payment is not stored and there are no retries. A bank 4xx would mean a gateway bug, since we validate first, but it is mapped the same way for simplicity.
-9. **No full card number or CVV is stored, returned or logged.** Only the last four digits are kept. `PostPaymentRequest.toString()` leaves out the card number and CVV.
+8. **Bank failures** (503, 4xx, timeout, connection error, empty body, or a 200 that omits `authorized`) return `503 {"message":"Acquiring bank unavailable"}`. The payment is not stored and there are no retries. A missing `authorized` is not treated as a decline. A bank 4xx would mean a gateway bug, since we validate first, but it is mapped the same way for simplicity.
+9. **No full card number or CVV is stored, returned or logged.** Only the last four digits are kept. `PostPaymentRequest.toString()` leaves the card number and CVV out. `BankPaymentRequest.toString()` keeps the last four digits only, because the generated record text would include both secrets.
 10. **Storage** is still the in-memory repository from the template. I changed `HashMap` to `ConcurrentHashMap` because the controller is called concurrently.
 11. **No idempotency.** Submitting the same payment twice creates two payments.
 12. **Bank request** is `{card_number, expiry_date "MM/YYYY", currency, amount, cvv}`, as in the README example.
 13. **Loose JSON typing.** Jackson still coerces a numeric string such as `"12"` into the expiry month. I didn't tighten this.
 
 ## Testing
-- Tests are in `PostPaymentTest` (46 tests) plus the 2 existing tests.
+- Tests are in `PostPaymentTest`, with smaller tests for validation, the service, the bank client and the repository. The original GET tests are still there.
 - They run through `MockMvc`, and the bank is mocked with `MockRestServiceServer` on the app's `RestTemplate`.
 - They check the exact request sent to the bank, every validation rule (including boundaries), malformed bodies and each bank failure mode.
 - They also check that rejected payments never reach the bank and that card data is not leaked.
-- The real Mountebank simulator was **not** run (Docker was skipped by request), so the bank contract is only verified against the README's description.
+- Automated tests mock the bank. `docker compose up` runs the gateway against the real Mountebank simulator.
 
 ## Running
 Needs JDK 17 (Gradle 8.2.1 does not run on JDK 25): `JAVA_HOME=<jdk17> ./gradlew test`

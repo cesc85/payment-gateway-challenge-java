@@ -64,4 +64,12 @@ class BankClientTest {
 
     assertThrows(BankUnavailableException.class, () -> bankClient.authorize(request()));
   }
+
+  @Test
+  void missingAuthorizedIsReportedAsBankUnavailable() {
+    when(restTemplate.postForObject(BANK_URL, request(), BankPaymentResponse.class))
+        .thenReturn(new BankPaymentResponse(null));
+
+    assertThrows(BankUnavailableException.class, () -> bankClient.authorize(request()));
+  }
 }

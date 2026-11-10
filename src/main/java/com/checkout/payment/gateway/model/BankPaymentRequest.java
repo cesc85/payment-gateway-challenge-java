@@ -18,4 +18,22 @@ public record BankPaymentRequest(
         request.getAmount(),
         request.getCvv());
   }
+
+  // The generated record toString would include the card number and CVV.
+  @Override
+  public String toString() {
+    return "BankPaymentRequest{" +
+        "cardNumberLastFour='" + lastFour(cardNumber) + '\'' +
+        ", expiryDate='" + expiryDate + '\'' +
+        ", currency='" + currency + '\'' +
+        ", amount=" + amount +
+        '}';
+  }
+
+  private static String lastFour(String cardNumber) {
+    if (cardNumber == null || cardNumber.length() < 4) {
+      return "";
+    }
+    return cardNumber.substring(cardNumber.length() - 4);
+  }
 }
